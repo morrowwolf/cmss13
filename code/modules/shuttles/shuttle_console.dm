@@ -304,10 +304,6 @@ GLOBAL_LIST_EMPTY(shuttle_controls)
 						for(var/obj/structure/machinery/nuclearbomb/bomb in world)
 							bomb.end_round = FALSE
 
-					if(almayer_orbital_cannon)
-						almayer_orbital_cannon.is_disabled = TRUE
-						addtimer(CALLBACK(almayer_orbital_cannon, /obj/structure/orbital_cannon.proc/enable), 10 MINUTES, TIMER_UNIQUE)
-
 					if(almayer_aa_cannon)
 						almayer_aa_cannon.is_disabled = TRUE
 				else
@@ -319,8 +315,15 @@ GLOBAL_LIST_EMPTY(shuttle_controls)
 				to_chat(M, SPAN_WARNING("Hrm, that didn't work. Maybe try the one on the ship?"))
 				return
 			else
-				if(is_ground_level(z)) shuttle.transit_gun_mission = 0 //remote launch always do transport flight.
+				if(almayer_orbital_cannon)
+					almayer_orbital_cannon.is_disabled = TRUE
+					addtimer(CALLBACK(almayer_orbital_cannon, /obj/structure/orbital_cannon.proc/enable), 10 MINUTES, TIMER_UNIQUE)
+
+				if(is_ground_level(z))
+					shuttle.transit_gun_mission = 0 //remote launch always do transport flight.
+
 				shuttle.launch(src)
+
 				if(onboard && !shuttle.iselevator)
 					M.count_niche_stat(STATISTICS_NICHE_FLIGHT)
 			msg_admin_niche("[M] ([M.key]) launched a [shuttle.iselevator? "elevator" : "shuttle"] using [src].")
