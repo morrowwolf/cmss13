@@ -82,6 +82,17 @@
 		flags_jumpsuit &= ~UNIFORM_JACKET_REMOVED
 		log_debug("CLOTHING: Jumpsuit of name: \"[src.name]\" and type: \"[src.type]\" was flagged as having a removed jacket but could not detect a shirtless icon state.")
 
+	if(pre_blood_mob_overlay)
+		var/end_pre_blood_mob_overlay = pre_blood_mob_overlay
+		if(flags_jumpsuit & UNIFORM_SLEEVE_ROLLED)
+			end_pre_blood_mob_overlay = "[pre_blood_mob_overlay]_d"
+		else if(flags_jumpsuit & UNIFORM_SLEEVE_CUT)
+			end_pre_blood_mob_overlay = "[pre_blood_mob_overlay]_df"
+		else if(flags_jumpsuit & UNIFORM_JACKET_REMOVED)
+			end_pre_blood_mob_overlay = "[pre_blood_mob_overlay]_dj"
+
+		overlays += image('icons/obj/items/clothing/uniform_overlays.dmi', null, end_pre_blood_mob_overlay)
+
 	update_clothing_icon()
 
 /obj/item/clothing/Destroy()
@@ -320,3 +331,17 @@
 
 	else
 		..()
+
+/obj/item/clothing/under/handle_pre_blood_overlay(var/image/mob_overlay)
+	..()
+	if(pre_blood_mob_overlay)
+		var/end_pre_blood_mob_overlay = pre_blood_mob_overlay
+		if(flags_jumpsuit & UNIFORM_SLEEVE_ROLLED)
+			end_pre_blood_mob_overlay = "[pre_blood_mob_overlay]_d"
+		else if(flags_jumpsuit & UNIFORM_SLEEVE_CUT)
+			end_pre_blood_mob_overlay = "[pre_blood_mob_overlay]_df"
+		else if(flags_jumpsuit & UNIFORM_JACKET_REMOVED)
+			end_pre_blood_mob_overlay = "[pre_blood_mob_overlay]_dj"
+
+		mob_overlay.overlays += image('icons/obj/items/clothing/uniform_overlays.dmi', null, end_pre_blood_mob_overlay)
+	return mob_overlay

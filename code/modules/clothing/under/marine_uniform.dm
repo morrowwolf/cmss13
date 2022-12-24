@@ -105,6 +105,11 @@
 	suit_restricted = list(/obj/item/clothing/suit/storage/marine, /obj/item/clothing/suit/armor/riot/marine, /obj/item/clothing/suit/storage/jacket/marine/service/mp)
 	flags_jumpsuit = UNIFORM_SLEEVE_ROLLABLE
 	specialty = "military police"
+	pre_blood_mob_overlay = "mp_uniform"
+
+/obj/item/clothing/under/marine/mp/warden
+	desc = "Standard-issue Military Warden uniform. It has shards of light Kevlar to help protect against stabbing weapons and bullets."
+	pre_blood_mob_overlay = "warden_uniform"
 
 /obj/item/clothing/under/marine/officer
 	name = "marine officer uniform"
@@ -133,6 +138,7 @@
 	suit_restricted = list(/obj/item/clothing/suit/storage/marine, /obj/item/clothing/suit/armor/riot/marine, /obj/item/clothing/suit/storage/jacket/marine/service/cmp)
 	flags_jumpsuit = UNIFORM_SLEEVE_ROLLABLE
 	specialty = "chief MP"
+	pre_blood_mob_overlay = "cmp_uniform"
 
 /obj/item/clothing/under/marine/officer/technical
 	name = "technical officer uniform"
@@ -328,6 +334,8 @@
 	)
 
 	min_cold_protection_temperature = ICE_PLANET_min_cold_protection_temperature
+
+	pre_blood_mob_overlay = ""
 
 /obj/item/clothing/under/marine/mp/provost/enforcer
 	name = "\improper Provost Enforcer Uniform"
