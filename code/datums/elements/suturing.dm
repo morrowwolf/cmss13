@@ -201,7 +201,7 @@ YOU TO 200 DAMAGE. I ASK NOT FOR MY OWN MEDIC EGOSTROKING, BUT FOR THE GOOD OF T
 		))
 
 ///Updates the amount of sutured damage remaining.
-/datum/suture_handler/proc/update_sutures(obj/limb/target_limb, is_ff, previous_brute, previous_burn, pre_add)
+/datum/suture_handler/proc/update_sutures(obj/limb/target_limb, previous_brute, previous_burn, pre_add)
 	SIGNAL_HANDLER
 
 	if(sutured_brute)
