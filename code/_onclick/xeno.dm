@@ -29,7 +29,7 @@
 		if (target == T && alt)
 			target = alt
 	target = target.handle_barriers(src, , (PASS_MOB_THRU_XENO|PASS_TYPE_CRAWLER)) // Checks if target will be attacked by the current alien OR if the blocker will be attacked
-	switch(target.attack_alien(src))
+	switch(target.attack_alien(src, directional_assist_attack = tile_attack))
 		if(XENO_ATTACK_ACTION)
 			xeno_attack_delay(src)
 		if(XENO_NONCOMBAT_ACTION)
@@ -54,9 +54,9 @@
 										firepatted = TRUE
 										fire.firelevel -= 2*fire_level_to_extinguish
 										fire.update_flame()
-									else 
+									else
 										qdel(fire)
-								else 
+								else
 									qdel(fire)
 				xeno_miss_delay(src)
 				animation_attack_on(target)
@@ -86,7 +86,7 @@ Return FALSE if it didn't do anything and should count as a missed slash.
 
 If using do_afters or sleeps, use invoke_async (or manually add the relevant action delayand return FALSE
 so that it doesn't double up on the delays) so that it applies the delay immediately instead of when it finishes.**/
-/atom/proc/attack_alien(mob/user as mob)
+/atom/proc/attack_alien(mob/user as mob, dam_bonus, directional_assist_attack)
 	return
 
 /mob/living/carbon/Xenomorph/click(var/atom/A, var/list/mods)

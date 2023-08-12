@@ -324,7 +324,7 @@
 	pounceAction.additional_effects(M)
 
 	if(pounceAction.slash)
-		M.attack_alien(src, pounceAction.slash_bonus_damage)
+		M.attack_alien(src, dam_bonus = pounceAction.slash_bonus_damage)
 
 	throwing = FALSE //Reset throwing since something was hit.
 

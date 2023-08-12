@@ -95,6 +95,7 @@ var/global/list/limb_types_by_name = list(
 // Do not use this if someone is intentionally trying to hit a specific body part.
 /proc/rand_zone(zone, probability)
 	if (zone)
+		to_chat(world, SPAN_NOTICE("zone: [zone], prob: [probability]")) //Remove this - Morrow
 		zone = check_zone(zone)
 		if (prob(probability))
 			return zone

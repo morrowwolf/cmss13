@@ -8,7 +8,7 @@
  */
 
 
-/mob/living/carbon/human/attack_alien(mob/living/carbon/Xenomorph/M, dam_bonus)
+/mob/living/carbon/human/attack_alien(mob/living/carbon/Xenomorph/M, dam_bonus, directional_assist_attack)
 	if(M.fortify || M.burrow)
 		return XENO_NO_DELAY_ACTION
 
@@ -87,7 +87,7 @@
 
 			M.flick_attack_overlay(src, "slash")
 			var/obj/limb/affecting
-			affecting = get_limb(rand_zone(M.zone_selected, 25))
+			affecting = get_limb(rand_zone(M.zone_selected, directional_assist_attack ? 25 : 70))
 			if(!affecting)
 				affecting = get_limb("chest") //Default to torso if we don't get a proper limb
 
