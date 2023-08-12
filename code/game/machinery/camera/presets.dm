@@ -61,7 +61,7 @@
 	icon_state = "vehicle_camera"
 	network = list(CAMERA_NET_VEHICLE)
 
-/obj/structure/machinery/camera/vehicle/toggle_cam_status(var/on = FALSE)
+/obj/structure/machinery/camera/vehicle/toggle_cam_status(on = FALSE)
 	if(on)
 		status = TRUE
 	else
@@ -104,11 +104,15 @@
 	unacidable = TRUE
 	network = list(CAMERA_NET_RESEARCH, CAMERA_NET_CONTAINMENT)
 
-/obj/structure/machinery/camera/autoname/almayer/containment/attack_alien(mob/living/carbon/Xenomorph/M)
+/obj/structure/machinery/camera/autoname/almayer/containment/attack_alien(mob/living/carbon/xenomorph/M)
 	return
 
 /obj/structure/machinery/camera/autoname/almayer/containment/hidden
 	network = list(CAMERA_NET_CONTAINMENT_HIDDEN)
+
+/obj/structure/machinery/camera/autoname/almayer/containment/ares
+	name = "ares core camera"
+	network = list(CAMERA_NET_ALMAYER, CAMERA_NET_ARES)
 
 //used by the landing camera dropship equipment. Do not place them right under where the dropship lands.
 //Should place them near each corner of your LZs.

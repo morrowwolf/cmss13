@@ -27,8 +27,13 @@
 // src.jetpack = new /obj/item/toy/sword(src)
 // src.jetpack.name = "Placeholder Upgrade Item"
 
+/obj/item/circuitboard/robot_module/Destroy()
+	. = ..()
+	QDEL_NULL(emag)
+	QDEL_NULL(jetpack)
+	QDEL_NULL_LIST(modules)
 
-/obj/item/circuitboard/robot_module/proc/respawn_consumable(var/mob/living/silicon/robot/R)
+/obj/item/circuitboard/robot_module/proc/respawn_consumable(mob/living/silicon/robot/R)
 
 	if(!stacktypes || !stacktypes.len) return
 
@@ -52,7 +57,7 @@
 		if(O)
 			modules += O
 
-/obj/item/circuitboard/robot_module/proc/add_languages(var/mob/living/silicon/robot/R)
+/obj/item/circuitboard/robot_module/proc/add_languages(mob/living/silicon/robot/R)
 	//full set of languages
 	R.add_language(LANGUAGE_RUSSIAN, 1)
 	R.add_language(LANGUAGE_JAPANESE, 1)
@@ -69,15 +74,15 @@
 	src.modules += new /obj/item/tool/crowbar(src)
 	src.modules += new /obj/item/device/healthanalyzer(src)
 	src.modules += new /obj/item/robot/stun(src)
-	src.emag = new /obj/item/weapon/melee/energy/sword(src)
+	src.emag = new /obj/item/weapon/energy/sword(src)
 	return
 
 /obj/item/circuitboard/robot_module/surgeon
 	name = "surgeon robot module"
 	stacktypes = list(
 		/obj/item/stack/medical/advanced/bruise_pack = 5,
-		/obj/item/stack/nanopaste = 5
-		)
+		/obj/item/stack/nanopaste = 5,
+	)
 
 /obj/item/circuitboard/robot_module/surgeon/Initialize()
 	. = ..()
@@ -106,7 +111,7 @@
 	src.emag.reagents.add_reagent("pacid", 250)
 	src.emag.name = "Polyacid spray"
 
-/obj/item/circuitboard/robot_module/surgeon/respawn_consumable(var/mob/living/silicon/robot/R)
+/obj/item/circuitboard/robot_module/surgeon/respawn_consumable(mob/living/silicon/robot/R)
 	if(src.emag)
 		var/obj/item/reagent_container/spray/PS = src.emag
 		PS.reagents.add_reagent("pacid", 2)
@@ -117,8 +122,8 @@
 	stacktypes = list(
 		/obj/item/stack/medical/ointment = 15,
 		/obj/item/stack/medical/advanced/bruise_pack = 15,
-		/obj/item/stack/medical/splint = 15
-		)
+		/obj/item/stack/medical/splint = 15,
+	)
 
 /obj/item/circuitboard/robot_module/medic/Initialize()
 	. = ..()
@@ -146,7 +151,7 @@
 	src.emag.reagents.add_reagent("pacid", 250)
 	src.emag.name = "Polyacid spray"
 
-/obj/item/circuitboard/robot_module/medic/respawn_consumable(var/mob/living/silicon/robot/R)
+/obj/item/circuitboard/robot_module/medic/respawn_consumable(mob/living/silicon/robot/R)
 	var/obj/item/reagent_container/syringe/S = locate() in src.modules
 	if(S.mode == 2)
 		S.reagents.clear_reagents()
@@ -172,8 +177,8 @@
 		/obj/item/stack/sheet/glass/reinforced = 50,
 		/obj/item/stack/cable_coil = 50,
 		/obj/item/stack/rods = 50,
-		/obj/item/stack/tile/plasteel = 20
-		)
+		/obj/item/stack/tile/plasteel = 20,
+	)
 
 /obj/item/circuitboard/robot_module/engineering/Initialize()
 	. = ..()
@@ -200,7 +205,7 @@
 		W.amount = stacktypes[T]
 		src.modules += W
 
-/obj/item/circuitboard/robot_module/engineering/respawn_consumable(var/mob/living/silicon/robot/R)
+/obj/item/circuitboard/robot_module/engineering/respawn_consumable(mob/living/silicon/robot/R)
 	var/obj/item/device/lightreplacer/L = locate() in src.modules
 	L.uses = L.max_uses
 
@@ -220,7 +225,7 @@
 // src.modules += new /obj/item/weapon/gun/energy/taser/cyborg(src)
 // src.emag = new /obj/item/weapon/gun/energy/laser/cyborg(src)
 
-/obj/item/circuitboard/robot_module/security/respawn_consumable(var/mob/living/silicon/robot/R)
+/obj/item/circuitboard/robot_module/security/respawn_consumable(mob/living/silicon/robot/R)
 	var/obj/item/device/flash/F = locate() in src.modules
 	if(F.broken)
 		F.broken = 0
@@ -253,7 +258,7 @@
 	src.emag.reagents.add_reagent("cleaner", 250)
 	src.emag.name = "space cleaner"
 
-/obj/item/circuitboard/robot_module/janitor/respawn_consumable(var/mob/living/silicon/robot/R)
+/obj/item/circuitboard/robot_module/janitor/respawn_consumable(mob/living/silicon/robot/R)
 	var/obj/item/device/lightreplacer/LR = locate() in src.modules
 	LR.Charge(R)
 	if(src.emag)
@@ -283,17 +288,12 @@
 	src.modules += L
 
 	src.modules += new /obj/item/reagent_container/food/drinks/shaker(src)
-	src.emag = new /obj/item/reagent_container/food/drinks/cans/beer(src)
 
-	emag.create_reagents(50)
-	emag.reagents.add_reagent("beer2", 50)
-	src.emag.name = "Mickey Finn's Special Brew"
-
-/obj/item/circuitboard/robot_module/butler/add_languages(var/mob/living/silicon/robot/R)
+/obj/item/circuitboard/robot_module/butler/add_languages(mob/living/silicon/robot/R)
 	//full set of languages
 	R.add_language(LANGUAGE_JAPANESE, 1)
 
-/obj/item/circuitboard/robot_module/butler/respawn_consumable(var/mob/living/silicon/robot/R)
+/obj/item/circuitboard/robot_module/butler/respawn_consumable(mob/living/silicon/robot/R)
 	var/obj/item/reagent_container/food/condiment/enzyme/E = locate() in src.modules
 	E.reagents.add_reagent("enzyme", 2)
 	if(src.emag)
@@ -307,8 +307,7 @@
 	. = ..()
 	src.modules += new /obj/item/device/flashlight(src)
 	src.modules += new /obj/item/device/flash(src)
-	src.modules += new /obj/item/weapon/melee/energy/sword(src)
-// src.modules += new /obj/item/weapon/gun/energy/pulse_rifle/destroyer(src)
+	src.modules += new /obj/item/weapon/energy/sword(src)
 
 /obj/item/circuitboard/robot_module/drone
 	name = "drone module"
@@ -321,8 +320,8 @@
 		/obj/item/stack/tile/plasteel = 15,
 		/obj/item/stack/sheet/metal = 20,
 		/obj/item/stack/sheet/glass = 20,
-		/obj/item/stack/cable_coil = 30
-		)
+		/obj/item/stack/cable_coil = 30,
+	)
 
 /obj/item/circuitboard/robot_module/drone/Initialize()
 	. = ..()
@@ -345,10 +344,10 @@
 		W.amount = stacktypes[T]
 		src.modules += W
 
-/obj/item/circuitboard/robot_module/drone/add_languages(var/mob/living/silicon/robot/R)
+/obj/item/circuitboard/robot_module/drone/add_languages(mob/living/silicon/robot/R)
 	return //not much ROM to spare in that tiny microprocessor!
 
-/obj/item/circuitboard/robot_module/drone/respawn_consumable(var/mob/living/silicon/robot/R)
+/obj/item/circuitboard/robot_module/drone/respawn_consumable(mob/living/silicon/robot/R)
 	var/obj/item/reagent_container/spray/cleaner/C = locate() in src.modules
 	C.reagents.add_reagent("cleaner", 3)
 

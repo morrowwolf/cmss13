@@ -54,12 +54,12 @@
 	buyable = 0
 	group = "ASRS"
 
-/datum/supply_packs/ammo_l42_mag_box/asrs
+/datum/supply_packs/ammo_m4ra_mag_box/asrs
 	buyable = 0
 	group = "ASRS"
 	cost = ASRS_VERY_LOW_WEIGHT
 
-/datum/supply_packs/ammo_l42_mag_box_ap/asrs
+/datum/supply_packs/ammo_m4ra_mag_box_ap/asrs
 	buyable = 0
 	group = "ASRS"
 
@@ -119,6 +119,16 @@
 	cost = ASRS_LOW_WEIGHT
 
 /datum/supply_packs/mre/asrs
+	buyable = 0
+	group = "ASRS"
+	cost = ASRS_VERY_LOW_WEIGHT
+
+/datum/supply_packs/flashlights/asrs
+	buyable = 0
+	group = "ASRS"
+	cost = ASRS_VERY_LOW_WEIGHT
+
+/datum/supply_packs/batteries/asrs
 	buyable = 0
 	group = "ASRS"
 	cost = ASRS_VERY_LOW_WEIGHT

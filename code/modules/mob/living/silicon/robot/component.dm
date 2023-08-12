@@ -20,6 +20,11 @@
 /datum/robot_component/New(mob/living/silicon/robot/R)
 	src.owner = R
 
+/datum/robot_component/Destroy(force, ...)
+	. = ..()
+	owner = null
+	QDEL_NULL(wrapped)
+
 /datum/robot_component/proc/install()
 /datum/robot_component/proc/uninstall()
 
@@ -196,7 +201,7 @@
 	return C && C.installed == 1 && C.toggled && C.is_powered()
 
 // Returns component by it's string name
-/mob/living/silicon/robot/proc/get_component(var/component_name)
+/mob/living/silicon/robot/proc/get_component(component_name)
 	var/datum/robot_component/C = components[component_name]
 	return C
 

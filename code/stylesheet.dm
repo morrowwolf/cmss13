@@ -27,7 +27,10 @@ em {font-style: normal; font-weight: bold;}
 .mod {color: #735638; font-weight: bold;}
 .adminmod {color: #402A14; font-weight: bold;}
 .mentorsay {color: #d4af57; font-weight: bold;}
+.mentorhelp {color: #009900; font-weight: bold;}
+.mentorstaff {color: #b5850d; font-weight: bold;}
 .staffsay {color: #b5850d; font-weight: bold;}
+.staff_ic {color: #000099;}
 
 .name { font-weight: bold;}
 
@@ -43,6 +46,7 @@ em {font-style: normal; font-weight: bold;}
 .secradio {color: #A30000;}
 .engradio {color: #A66300;}
 .medradio {color: #008160;}
+.sentryradio {color: #844300;}
 .sciradio {color: #993399;}
 .supradio {color: #5F4519;}
 .jtacradio {color: #702963;}

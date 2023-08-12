@@ -41,7 +41,7 @@
 				open()
 			else
 				src.req_access = list()
-				src.req_access += pick(get_all_accesses())
+				src.req_access += pick(get_all_main_access())
 	..()
 
 /obj/structure/closet/secure_closet/proc/togglelock(mob/living/user)
@@ -101,8 +101,8 @@
 			return
 		return ..(W,user)
 	else
-		if(isXeno(user))
-			var/mob/living/carbon/Xenomorph/opener = user
+		if(isxeno(user))
+			var/mob/living/carbon/xenomorph/opener = user
 			src.attack_alien(opener)
 			return
 		togglelock(user)
@@ -112,7 +112,7 @@
 	if(src.locked)
 		src.togglelock(user)
 	else
-		if(opened && isXeno(user))
+		if(opened && isxeno(user))
 			return // stop xeno closing them
 		src.toggle(user)
 

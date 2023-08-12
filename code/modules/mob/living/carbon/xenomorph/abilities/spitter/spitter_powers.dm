@@ -1,5 +1,5 @@
 /datum/action/xeno_action/onclick/charge_spit/use_ability(atom/A)
-	var/mob/living/carbon/Xenomorph/zenomorf = owner
+	var/mob/living/carbon/xenomorph/zenomorf = owner
 
 	if (!action_cooldown_check())
 		return
@@ -30,12 +30,11 @@
 	addtimer(CALLBACK(src, PROC_REF(remove_effects)), duration)
 
 	apply_cooldown()
-	..()
-	return
+	return ..()
 
 /datum/action/xeno_action/onclick/charge_spit/proc/disable_spatter()
 	SIGNAL_HANDLER
-	var/mob/living/carbon/Xenomorph/zenomorf = owner
+	var/mob/living/carbon/xenomorph/zenomorf = owner
 	if(zenomorf.ammo == GLOB.ammo_list[/datum/ammo/xeno/acid/spatter])
 		to_chat(zenomorf, SPAN_XENOWARNING("Your acid glands empty out and return back to normal. You will once more fire long-ranged weak spits."))
 		zenomorf.balloon_alert(zenomorf, "your spits are back to normal", text_color = "#93ec78")
@@ -43,7 +42,7 @@
 	UnregisterSignal(zenomorf, COMSIG_XENO_POST_SPIT)
 
 /datum/action/xeno_action/onclick/charge_spit/proc/remove_effects()
-	var/mob/living/carbon/Xenomorph/zenomorf = owner
+	var/mob/living/carbon/xenomorph/zenomorf = owner
 
 	if (!istype(zenomorf))
 		return
@@ -60,3 +59,4 @@
 	if(iscarbon(target))
 		var/mob/living/carbon/carbon_target = target
 		carbon_target.reagents.add_reagent("molecularacid", 2)
+		carbon_target.reagents.set_source_mob(owner, /datum/reagent/toxin/molecular_acid)

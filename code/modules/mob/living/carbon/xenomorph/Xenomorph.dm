@@ -26,7 +26,7 @@
 
 #undef DEBUG_XENO
 
-/mob/living/carbon/Xenomorph
+/mob/living/carbon/xenomorph
 	//// ALL OLD SS13 VARS
 	name = "Drone"
 	desc = "What the hell is THAT?"
@@ -50,6 +50,8 @@
 	faction = FACTION_XENOMORPH
 	gender = NEUTER
 	icon_size = 48
+	black_market_value = KILL_MENDOZA
+	dead_black_market_value = 50
 	var/obj/item/clothing/suit/wear_suit = null
 	var/obj/item/clothing/head/head = null
 	var/obj/item/r_store = null
@@ -70,8 +72,8 @@
 	var/datum/caste_datum/caste // Used to extract determine ALL Xeno stats.
 	var/speaking_key = "x"
 	var/speaking_noise = "alien_talk"
-	var/slash_verb = "slash"
-	var/slashes_verb = "slashes"
+	slash_verb = "slash"
+	slashes_verb = "slashes"
 	var/slash_sound = "alien_claw_flesh"
 	health = 5
 	maxHealth = 5
@@ -96,7 +98,6 @@
 	var/counts_for_slots = TRUE
 	var/counts_for_roundend = TRUE
 	var/refunds_larva_if_banished = TRUE
-	var/shaman_interactive = TRUE // whether shaman abilities affect this xeno
 	var/can_hivemind_speak = TRUE
 
 	// Tackles
@@ -126,7 +127,7 @@
 	var/armor_integrity_max = 100
 	var/armor_integrity_last_damage_time = 0
 	var/armor_integrity_immunity_time = 0
-	var/pull_multiplier = 1.0
+	var/pull_multiplier = 1
 	var/aura_strength = 0 // Pheromone strength
 	var/weed_level = WEED_LEVEL_STANDARD
 	var/acid_level = 0
@@ -142,7 +143,7 @@
 	var/hive_pos = NORMAL_XENO // The position of the xeno in the hive (0 = normal xeno; 1 = queen; 2+ = hive leader)
 
 	// Variables that can be mutated
-	var/ability_speed_modifier = 0.0 //Things that add on top of our base speed, based on what powers we are using
+	var/ability_speed_modifier = 0 //Things that add on top of our base speed, based on what powers we are using
 
 	// Progression-related
 	var/age_prefix = ""
@@ -224,14 +225,19 @@
 	var/acid_splash_cooldown = 5 SECONDS //Time it takes between acid splash retaliate procs
 	var/acid_splash_last //Last recorded time that an acid splash procced
 	var/interference = 0 // Stagger for predator weapons. Prevents hivemind usage, queen overwatching, etc.
-	var/mob/living/carbon/Xenomorph/observed_xeno // Overwatched xeno for xeno hivemind vision
+	var/mob/living/carbon/xenomorph/observed_xeno // Overwatched xeno for xeno hivemind vision
 	var/need_weeds = TRUE // Do we need weeds to regen HP?
 	var/datum/behavior_delegate/behavior_delegate = null // Holds behavior delegate. Governs all 'unique' hooked behavior of the Xeno. Set by caste datums and strains.
 	var/datum/action/xeno_action/activable/selected_ability // Our currently selected ability
 	var/datum/action/xeno_action/activable/queued_action // Action to perform on the next click.
 	var/is_zoomed = FALSE
-	var/tileoffset = 0 // Zooming-out related vars
-	var/viewsize = 0
+	var/list/spit_types
+	/// Caste-based spit windup
+	var/spit_windup = FALSE
+	/// Caste-based spit windup duration (if applicable)
+	var/spit_delay = 0
+	var/tileoffset = 0 	// How much your view will be offset in the direction that you zoom?
+	var/viewsize = 0	//What size your view will be changed to when you zoom?
 	var/banished = FALSE // Banished xenos can be attacked by all other xenos
 	var/lock_evolve = FALSE //Prevents evolve/devolve (used when banished)
 	var/list/tackle_counter
@@ -240,7 +246,7 @@
 	var/acid_blood_damage = 25
 	var/nocrit = FALSE
 	var/deselect_timer = 0 // Much like Carbon.last_special is a short tick record to prevent accidental deselects of abilities
-
+	var/got_evolution_message = FALSE
 	var/pounce_distance = 0
 
 	// Life reduction variables.
@@ -264,29 +270,41 @@
 	// an easily modularizable way. So, here you go.
 	//
 	//////////////////////////////////////////////////////////////////
-	var/weedwalking_activated = FALSE //Hivelord's weedwalking
 	var/tunnel = FALSE
-	var/stealth = FALSE // for check on lurker invisibility
+	/// for check on lurker invisibility
+	var/stealth = FALSE
 	var/burrow = FALSE
 	var/fortify = FALSE
 	var/crest_defense = FALSE
-	var/agility = FALSE // 0 - upright, 1 - all fours
+	/// 0/FALSE - upright, 1/TRUE - all fours
+	var/agility = FALSE
 	var/ripping_limb = FALSE
 	var/steelcrest = FALSE
-	// Related to zooming out (primarily queen and boiler)
-	var/devour_timer = 0 // The world.time at which we will regurgitate our currently-vored victim
-	var/extra_build_dist = 0 // For drones/hivelords. Extends the maximum build range they have
+	/// The world.time at which we will regurgitate our currently-vored victim
+	var/devour_timer = 0
+	/// For drones/hivelords. Extends the maximum build range they have
+	var/extra_build_dist = 0
+	/// tiles from self you can plant eggs.
+	var/egg_planting_range = 1
 	var/can_stack_builds = FALSE
 	var/list/resin_build_order
-	var/selected_resin // Which resin structure to build when we secrete resin, defaults to null.
-	var/selected_construction = XENO_STRUCTURE_CORE //which special structure to build when we place constructions
-	var/selected_mark // If leader what mark you will place when you make one
-	var/datum/ammo/xeno/ammo = null //The ammo datum for our spit projectiles. We're born with this, it changes sometimes.
+	/// Which resin structure to build when we secrete resin, defaults to null.
+	var/selected_resin
+	/// which special structure to build when we place constructions
+	var/selected_construction = XENO_STRUCTURE_CORE
+	/// If leader what mark you will place when you make one
+	var/selected_mark
+	/// The ammo datum for our spit projectiles. We're born with this, it changes sometimes.
+	var/datum/ammo/xeno/ammo = null
 	var/tunnel_delay = 0
-	var/list/available_fruits = list() // List of placeable the xenomorph has access to.
-	var/list/current_fruits = list() // If we have current_fruits that are limited, e.g. fruits
-	var/max_placeable = 0 // Limit to that amount
-	var/obj/effect/alien/resin/fruit/selected_fruit = null // the typepath of the placeable we wanna put down
+	/// List of placeable the xenomorph has access to.
+	var/list/available_fruits = list()
+	/// If we have current_fruits that are limited, e.g. fruits
+	var/list/current_fruits = list()
+	/// Limit to that amount
+	var/max_placeable = 0
+	/// the typepath of the placeable we wanna put down
+	var/obj/effect/alien/resin/fruit/selected_fruit = null
 	var/list/built_structures = list()
 
 	var/icon_xeno
@@ -340,7 +358,7 @@
 	var/atom/movable/vis_obj/xeno_wounds/wound_icon_carrier
 	var/atom/movable/vis_obj/xeno_pack/backpack_icon_carrier
 
-/mob/living/carbon/Xenomorph/Initialize(mapload, mob/living/carbon/Xenomorph/oldXeno, h_number)
+/mob/living/carbon/xenomorph/Initialize(mapload, mob/living/carbon/xenomorph/oldXeno, h_number)
 	var/area/A = get_area(src)
 	if(A && A.statistic_exempt)
 		statistic_exempt = TRUE
@@ -354,6 +372,7 @@
 		nicknumber = oldXeno.nicknumber
 		life_kills_total = oldXeno.life_kills_total
 		life_damage_taken_total = oldXeno.life_damage_taken_total
+		evolution_stored = oldXeno.evolution_stored
 		if(oldXeno.iff_tag)
 			iff_tag = oldXeno.iff_tag
 			iff_tag.forceMove(src)
@@ -408,7 +427,7 @@
 
 	generate_name()
 
-	if(isXenoQueen(src))
+	if(isqueen(src))
 		SStracking.set_leader("hive_[hivenumber]", src)
 	SStracking.start_tracking("hive_[hivenumber]", src)
 
@@ -421,6 +440,9 @@
 	add_inherent_verbs()
 	add_abilities()
 	recalculate_actions()
+
+	if(z)
+		INVOKE_NEXT_TICK(src, PROC_REF(add_minimap_marker))
 
 	sight |= SEE_MOBS
 	see_invisible = SEE_INVISIBLE_LIVING
@@ -496,26 +518,30 @@
 	RegisterSignal(src, COMSIG_MOB_SCREECH_ACT, PROC_REF(handle_screech_act))
 	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_XENO_SPAWN, src)
 
-/mob/living/carbon/Xenomorph/proc/handle_screech_act(var/mob/self, var/mob/living/carbon/Xenomorph/Queen/queen)
+/mob/living/carbon/xenomorph/proc/handle_screech_act(mob/self, mob/living/carbon/xenomorph/queen/queen)
 	SIGNAL_HANDLER
 	if(queen.can_not_harm(src))
 		return COMPONENT_SCREECH_ACT_CANCEL
 
+/mob/living/carbon/xenomorph/proc/add_minimap_marker(flags = MINIMAP_FLAG_XENO)
+	if(IS_XENO_LEADER(src))
+		SSminimaps.add_marker(src, z, hud_flags = flags, given_image = caste.get_minimap_icon(), overlay_iconstates = list(caste.minimap_leadered_overlay))
+		return
+	SSminimaps.add_marker(src, z, hud_flags = flags, given_image = caste.get_minimap_icon())
 
-
-/mob/living/carbon/Xenomorph/initialize_pass_flags(var/datum/pass_flags_container/PF)
+/mob/living/carbon/xenomorph/initialize_pass_flags(datum/pass_flags_container/PF)
 	..()
 	if (PF)
 		PF.flags_pass = PASS_MOB_IS_XENO
 		PF.flags_can_pass_all = PASS_MOB_THRU_XENO|PASS_AROUND|PASS_HIGH_OVER_ONLY
 
-/mob/living/carbon/Xenomorph/initialize_pain()
+/mob/living/carbon/xenomorph/initialize_pain()
 	pain = new /datum/pain/xeno(src)
 
-/mob/living/carbon/Xenomorph/initialize_stamina()
+/mob/living/carbon/xenomorph/initialize_stamina()
 	stamina = new /datum/stamina/none(src)
 
-/mob/living/carbon/Xenomorph/proc/fire_immune(mob/living/L)
+/mob/living/carbon/xenomorph/proc/fire_immune(mob/living/L)
 	SIGNAL_HANDLER
 
 	if(L.fire_reagent?.fire_penetrating && !burrow)
@@ -523,7 +549,7 @@
 
 	return COMPONENT_CANCEL_IGNITION
 
-/mob/living/carbon/Xenomorph/proc/flamer_crossed_immune(mob/living/L, datum/reagent/R)
+/mob/living/carbon/xenomorph/proc/flamer_crossed_immune(mob/living/L, datum/reagent/R)
 	SIGNAL_HANDLER
 
 	if(R.fire_penetrating)
@@ -539,12 +565,12 @@
 //Off-load this proc so it can be called freely
 //Since Xenos change names like they change shoes, we need somewhere to hammer in all those legos
 //We set their name first, then update their real_name AND their mind name
-/mob/living/carbon/Xenomorph/proc/generate_name()
+/mob/living/carbon/xenomorph/proc/generate_name()
 	//We don't have a nicknumber yet, assign one to stick with us
 	if(!nicknumber)
 		var/tempnumber = rand(1, 999)
 		var/list/numberlist = list()
-		for(var/mob/living/carbon/Xenomorph/X in GLOB.xeno_mob_list)
+		for(var/mob/living/carbon/xenomorph/X in GLOB.xeno_mob_list)
 			numberlist += X.nicknumber
 
 		while(tempnumber in numberlist)
@@ -562,7 +588,7 @@
 
 	handle_name(in_hive)
 
-/mob/living/carbon/Xenomorph/proc/handle_name(var/datum/hive_status/in_hive)
+/mob/living/carbon/xenomorph/proc/handle_name(datum/hive_status/in_hive)
 	var/name_prefix = in_hive.prefix
 	var/name_client_prefix = ""
 	var/name_client_postfix = ""
@@ -586,7 +612,7 @@
 	// Since we updated our name we should update the info in the UI
 	in_hive.hive_ui.update_xeno_info()
 
-/mob/living/carbon/Xenomorph/proc/set_lighting_alpha_from_prefs(var/client/xeno_client)
+/mob/living/carbon/xenomorph/proc/set_lighting_alpha_from_prefs(client/xeno_client)
 	var/vision_level = xeno_client?.prefs?.xeno_vision_level_pref
 	switch(vision_level)
 		if(XENO_VISION_LEVEL_NO_NVG)
@@ -600,7 +626,7 @@
 		var/atom/movable/screen/xenonightvision/screenobj = (locate() in hud_used.infodisplay)
 		screenobj.update_icon(src)
 
-/mob/living/carbon/Xenomorph/proc/set_lighting_alpha(var/level)
+/mob/living/carbon/xenomorph/proc/set_lighting_alpha(level)
 	switch(level)
 		if(XENO_VISION_LEVEL_NO_NVG)
 			lighting_alpha = LIGHTING_PLANE_ALPHA_VISIBLE
@@ -612,7 +638,7 @@
 	var/atom/movable/screen/xenonightvision/screenobj = (locate() in hud_used.infodisplay)
 	screenobj.update_icon(src)
 
-/mob/living/carbon/Xenomorph/proc/get_vision_level()
+/mob/living/carbon/xenomorph/proc/get_vision_level()
 	switch(lighting_alpha)
 		if(LIGHTING_PLANE_ALPHA_INVISIBLE)
 			return XENO_VISION_LEVEL_FULL_NVG
@@ -621,12 +647,12 @@
 		if(LIGHTING_PLANE_ALPHA_VISIBLE)
 			return XENO_VISION_LEVEL_NO_NVG
 
-/mob/living/carbon/Xenomorph/get_examine_text(mob/user)
+/mob/living/carbon/xenomorph/get_examine_text(mob/user)
 	. = ..()
 	if(HAS_TRAIT(src, TRAIT_SIMPLE_DESC))
 		return list(desc)
 
-	if(isXeno(user) && caste && caste.caste_desc)
+	if(isxeno(user) && caste && caste.caste_desc)
 		. += caste.caste_desc
 
 	if(l_hand)
@@ -653,19 +679,19 @@
 			if(1 to 24)
 				. += "It is heavily injured and limping badly."
 
-	if(isXeno(user))
-		var/mob/living/carbon/Xenomorph/xeno = user
+	if(isxeno(user))
+		var/mob/living/carbon/xenomorph/xeno = user
 		if(hivenumber != xeno.hivenumber)
 			. += "It appears to belong to [hive?.name ? "the [hive.name]" : "a different hive"]."
 
-	if(isXeno(user) || isobserver(user))
+	if(isxeno(user) || isobserver(user))
 		if(mutation_type != "Normal")
 			. += "It has specialized into a [mutation_type]."
 
 	if(iff_tag)
 		. += SPAN_NOTICE("It has an IFF tag sticking out of its carapace.")
 
-/mob/living/carbon/Xenomorph/Destroy()
+/mob/living/carbon/xenomorph/Destroy()
 	GLOB.living_xeno_list -= src
 	GLOB.xeno_mob_list -= src
 
@@ -723,19 +749,21 @@
 
 
 
-/mob/living/carbon/Xenomorph/slip(slip_source_name, stun_level, weaken_level, run_only, override_noslip, slide_steps)
+/mob/living/carbon/xenomorph/slip(slip_source_name, stun_level, weaken_level, run_only, override_noslip, slide_steps)
 	return FALSE
 
 
 
-/mob/living/carbon/Xenomorph/start_pulling(atom/movable/AM, lunge, no_msg)
+/mob/living/carbon/xenomorph/start_pulling(atom/movable/AM, lunge, no_msg)
 	if(SEND_SIGNAL(AM, COMSIG_MOVABLE_XENO_START_PULLING, src) & COMPONENT_ALLOW_PULL)
 		return do_pull(AM, lunge, no_msg)
 
+	if(burrow)
+		return
 	if(!isliving(AM))
 		return FALSE
 	var/mob/living/L = AM
-	if(isSynth(L) && L.health < 0) // no pulling critted or dead synths
+	if(issynth(L) && L.health < 0) // no pulling critted or dead synths
 		return FALSE
 	if(L.buckled)
 		return FALSE //to stop xeno from pulling marines on roller beds.
@@ -748,7 +776,7 @@
 		return FALSE
 	return ..()
 
-/mob/living/carbon/Xenomorph/pull_response(mob/puller)
+/mob/living/carbon/xenomorph/pull_response(mob/puller)
 	if(stat != DEAD && has_species(puller,"Human")) // If the Xeno is alive, fight back against a grab/pull
 		var/mob/living/carbon/human/H = puller
 		if(H.ally_of_hivenumber(hivenumber))
@@ -759,7 +787,7 @@
 		return FALSE
 	return TRUE
 
-/mob/living/carbon/Xenomorph/resist_grab(moving_resist)
+/mob/living/carbon/xenomorph/resist_grab(moving_resist)
 	if(!pulledby)
 		return
 	if(pulledby.grab_level)
@@ -769,7 +797,7 @@
 
 
 
-/mob/living/carbon/Xenomorph/prepare_huds()
+/mob/living/carbon/xenomorph/prepare_huds()
 	..()
 	//updating all the mob's hud images
 	med_hud_set_health()
@@ -785,24 +813,24 @@
 	MH.add_hud_to(src)
 
 
-/mob/living/carbon/Xenomorph/check_improved_pointing()
+/mob/living/carbon/xenomorph/check_improved_pointing()
 	//xeno leaders get a big arrow and less cooldown
 	if(hive_pos != NORMAL_XENO)
 		return TRUE
 
 ///get_eye_protection()
 ///Returns a number between -1 to 2
-/mob/living/carbon/Xenomorph/get_eye_protection()
+/mob/living/carbon/xenomorph/get_eye_protection()
 	return EYE_PROTECTION_WELDING
 
-/mob/living/carbon/Xenomorph/get_pull_miltiplier()
+/mob/living/carbon/xenomorph/get_pull_miltiplier()
 	return pull_multiplier
 
-/mob/living/carbon/Xenomorph/proc/set_faction(var/new_faction = FACTION_XENOMORPH)
+/mob/living/carbon/xenomorph/proc/set_faction(new_faction = FACTION_XENOMORPH)
 	faction = new_faction
 
 //Call this function to set the hive and do other cleanup
-/mob/living/carbon/Xenomorph/proc/set_hive_and_update(var/new_hivenumber = XENO_HIVE_NORMAL)
+/mob/living/carbon/xenomorph/proc/set_hive_and_update(new_hivenumber = XENO_HIVE_NORMAL)
 	var/datum/hive_status/new_hive = GLOB.hive_datum[new_hivenumber]
 	if(!new_hive)
 		return
@@ -815,12 +843,12 @@
 	for(var/T in new_hive.hive_inherant_traits)
 		ADD_TRAIT(src, T, TRAIT_SOURCE_HIVE)
 
-	if(istype(src, /mob/living/carbon/Xenomorph/Larva))
-		var/mob/living/carbon/Xenomorph/Larva/L = src
+	if(istype(src, /mob/living/carbon/xenomorph/larva))
+		var/mob/living/carbon/xenomorph/larva/L = src
 		L.update_icons() // larva renaming done differently
 	else
 		generate_name()
-	if(istype(src, /mob/living/carbon/Xenomorph/Queen))
+	if(istype(src, /mob/living/carbon/xenomorph/queen))
 		update_living_queens()
 
 	lock_evolve = FALSE
@@ -837,7 +865,7 @@
 //*********************************************************//
 
 //Call this function when major changes happen - evolutions, upgrades, mutators getting removed
-/mob/living/carbon/Xenomorph/proc/recalculate_everything()
+/mob/living/carbon/xenomorph/proc/recalculate_everything()
 	recalculate_stats()
 	recalculate_actions()
 	recalculate_pheromones()
@@ -847,7 +875,7 @@
 		hive.recalculate_hive() //Recalculating stuff around Queen maturing
 
 
-/mob/living/carbon/Xenomorph/proc/recalculate_stats()
+/mob/living/carbon/xenomorph/proc/recalculate_stats()
 	recalculate_health()
 	recalculate_plasma()
 	recalculate_stockpile()
@@ -857,14 +885,14 @@
 	recalculate_evasion()
 	recalculate_tackle()
 
-/mob/living/carbon/Xenomorph/proc/recalculate_tackle()
+/mob/living/carbon/xenomorph/proc/recalculate_tackle()
 	tackle_min = caste.tackle_min
 	tackle_max = caste.tackle_max
 	tackle_chance = caste.tackle_chance + tackle_chance_modifier
 	tacklestrength_min = caste.tacklestrength_min + mutators.tackle_strength_bonus + hive.mutators.tackle_strength_bonus
 	tacklestrength_max = caste.tacklestrength_max + mutators.tackle_strength_bonus + hive.mutators.tackle_strength_bonus
 
-/mob/living/carbon/Xenomorph/proc/recalculate_health()
+/mob/living/carbon/xenomorph/proc/recalculate_health()
 	var/new_max_health = nocrit ? health_modifier + maxHealth : health_modifier + caste.max_health
 	if (new_max_health == maxHealth)
 		return
@@ -876,7 +904,7 @@
 	if(health > maxHealth)
 		health = maxHealth
 
-/mob/living/carbon/Xenomorph/proc/recalculate_plasma()
+/mob/living/carbon/xenomorph/proc/recalculate_plasma()
 	if(!plasma_max)
 		return
 
@@ -890,24 +918,24 @@
 	if(plasma_stored > plasma_max)
 		plasma_stored = plasma_max
 
-/mob/living/carbon/Xenomorph/proc/recalculate_stockpile()
+/mob/living/carbon/xenomorph/proc/recalculate_stockpile()
 	crystal_max = caste.crystal_max
 	if(crystal_stored > crystal_max)
 		crystal_stored = crystal_max
 
-/mob/living/carbon/Xenomorph/proc/recalculate_speed()
+/mob/living/carbon/xenomorph/proc/recalculate_speed()
 	recalculate_move_delay = TRUE
 	speed = speed_modifier
 	if(caste)
 		speed += caste.speed
 	SEND_SIGNAL(src, COMSIG_XENO_RECALCULATE_SPEED)
 
-/mob/living/carbon/Xenomorph/proc/recalculate_armor()
+/mob/living/carbon/xenomorph/proc/recalculate_armor()
 	//We are calculating it in a roundabout way not to give anyone 100% armor deflection, so we're dividing the differences
 	armor_deflection = armor_modifier + round(100 - (100 - caste.armor_deflection))
 	armor_explosive_buff = explosivearmor_modifier
 
-/mob/living/carbon/Xenomorph/proc/recalculate_damage()
+/mob/living/carbon/xenomorph/proc/recalculate_damage()
 	melee_damage_lower = damage_modifier
 	melee_damage_upper = damage_modifier
 	melee_vehicle_damage = damage_modifier
@@ -916,26 +944,26 @@
 		melee_damage_upper += caste.melee_damage_upper
 		melee_vehicle_damage += caste.melee_vehicle_damage
 
-/mob/living/carbon/Xenomorph/proc/recalculate_evasion()
+/mob/living/carbon/xenomorph/proc/recalculate_evasion()
 	if(caste)
 		evasion = evasion_modifier + caste.evasion
 
-/mob/living/carbon/Xenomorph/proc/recalculate_actions()
+/mob/living/carbon/xenomorph/proc/recalculate_actions()
 	recalculate_acid()
 	recalculate_weeds()
 	pull_multiplier = mutators.pull_multiplier
-	if(isXenoRunner(src))
+	if(isrunner(src))
 		//Xeno runners need a small nerf to dragging speed mutator
-		pull_multiplier = 1.0 - (1.0 - mutators.pull_multiplier) * 0.85
+		pull_multiplier = 1 - (1 - mutators.pull_multiplier) * 0.85
 		if(is_zoomed)
 			zoom_out()
-	if(isXenoCarrier(src))
+	if(iscarrier(src))
 		huggers_max = caste.huggers_max
 		eggs_max = caste.eggs_max
 	need_weeds = mutators.need_weeds
 
 
-/mob/living/carbon/Xenomorph/proc/recalculate_acid()
+/mob/living/carbon/xenomorph/proc/recalculate_acid()
 	if(caste)
 		acid_level = caste.acid_level
 	if(acid_level == 0)
@@ -952,14 +980,14 @@
 				acid.level = acid_level
 				acid.update_level()
 
-/mob/living/carbon/Xenomorph/proc/recalculate_weeds()
+/mob/living/carbon/xenomorph/proc/recalculate_weeds()
 	if(!caste || caste.weed_level == 0)
 		return //Caste does not use weeds
 	weed_level = caste.weed_level + weed_modifier
 	if(weed_level < WEED_LEVEL_STANDARD)
 		weed_level = WEED_LEVEL_STANDARD//need to maintain the minimum in case something goes really wrong
 
-/mob/living/carbon/Xenomorph/proc/recalculate_pheromones()
+/mob/living/carbon/xenomorph/proc/recalculate_pheromones()
 	if(caste.aura_strength > 0)
 		aura_strength = caste.aura_strength + phero_modifier
 	else
@@ -978,10 +1006,10 @@
 			if("recovery")
 				recovery_new = min(recovery_new, received_phero_caps[capped_aura])
 
-/mob/living/carbon/Xenomorph/proc/recalculate_maturation()
+/mob/living/carbon/xenomorph/proc/recalculate_maturation()
 	evolution_threshold =  caste.evolution_threshold
 
-/mob/living/carbon/Xenomorph/rejuvenate()
+/mob/living/carbon/xenomorph/rejuvenate()
 	if(stat == DEAD && !QDELETED(src))
 		GLOB.living_xeno_list += src
 
@@ -997,7 +1025,7 @@
 	for(var/datum/action/xeno_action/XA in actions)
 		XA.end_cooldown()
 
-/mob/living/carbon/Xenomorph/resist_fire()
+/mob/living/carbon/xenomorph/resist_fire()
 	adjust_fire_stacks(XENO_FIRE_RESIST_AMOUNT, min_stacks = 0)
 	apply_effect(4, WEAKEN)
 	visible_message(SPAN_DANGER("[src] rolls on the floor, trying to put themselves out!"), \
@@ -1012,7 +1040,7 @@
 	visible_message(SPAN_DANGER("[src] has successfully extinguished themselves!"), \
 		SPAN_NOTICE("You extinguish yourself."), null, 5)
 
-/mob/living/carbon/Xenomorph/resist_restraints()
+/mob/living/carbon/xenomorph/resist_restraints()
 	var/breakouttime = legcuffed.breakouttime
 
 	next_move = world.time + 100
@@ -1031,39 +1059,74 @@
 	to_chat(src, SPAN_NOTICE(" You successfully remove [legcuffed]."))
 	drop_inv_item_on_ground(legcuffed)
 
-/mob/living/carbon/Xenomorph/IgniteMob()
+/mob/living/carbon/xenomorph/IgniteMob()
 	. = ..()
 	if (. & IGNITE_IGNITED)
 		RegisterSignal(src, COMSIG_XENO_PRE_HEAL, PROC_REF(cancel_heal))
 		if(!caste || !(caste.fire_immunity & FIRE_IMMUNITY_NO_DAMAGE) || fire_reagent.fire_penetrating)
 			INVOKE_ASYNC(src, TYPE_PROC_REF(/mob, emote), "roar")
 
-/mob/living/carbon/Xenomorph/ExtinguishMob()
+/mob/living/carbon/xenomorph/ExtinguishMob()
 	. = ..()
 	if (.)
 		UnregisterSignal(src, COMSIG_XENO_PRE_HEAL)
 
-/mob/living/carbon/Xenomorph/proc/cancel_heal()
+/mob/living/carbon/xenomorph/proc/cancel_heal()
 	SIGNAL_HANDLER
 	return COMPONENT_CANCEL_XENO_HEAL
 
-/mob/living/carbon/Xenomorph/proc/set_resin_build_order(var/list/build_order)
+/mob/living/carbon/xenomorph/proc/set_resin_build_order(list/build_order)
 	resin_build_order = build_order
 	if(length(resin_build_order))
 		selected_resin = resin_build_order[1]
 
-/mob/living/carbon/Xenomorph/ghostize(can_reenter_corpse = TRUE)
+/mob/living/carbon/xenomorph/ghostize(can_reenter_corpse = TRUE)
 	. = ..()
 	if(. && !can_reenter_corpse && stat != DEAD && !QDELETED(src) && !is_admin_level(z))
 		handle_ghost_message()
 
-/mob/living/carbon/Xenomorph/proc/handle_ghost_message()
+/mob/living/carbon/xenomorph/proc/handle_ghost_message()
 	announce_dchat("[src] ([mutation_type] [caste_type])</b> has ghosted and their body is up for grabs!", src)
 
-/mob/living/carbon/Xenomorph/Larva/handle_ghost_message()
-	if(locate(/obj/effect/alien/resin/special/pool) in range(2, get_turf(src)))
+/mob/living/carbon/xenomorph/larva/handle_ghost_message()
+	if(locate(/obj/effect/alien/resin/special/pylon/core) in range(2, get_turf(src)))
 		return
 	return ..()
 
-/mob/living/carbon/Xenomorph/handle_blood_splatter(var/splatter_dir)
-	new /obj/effect/temp_visual/dir_setting/bloodsplatter/xenosplatter(loc, splatter_dir)
+/mob/living/carbon/xenomorph/handle_blood_splatter(splatter_dir, duration)
+	var/color_override
+	if(special_blood)
+		var/datum/reagent/D = chemical_reagents_list[special_blood]
+		if(D)
+			color_override = D.color
+	new /obj/effect/temp_visual/dir_setting/bloodsplatter/xenosplatter(loc, splatter_dir, duration, color_override)
+
+/mob/living/carbon/xenomorph/Collide(atom/movable/movable_atom)
+	. = ..()
+	if(behavior_delegate)
+		behavior_delegate.on_collide(movable_atom)
+
+/mob/living/carbon/xenomorph/proc/scuttle(obj/structure/current_structure)
+	if (mob_size != MOB_SIZE_SMALL)
+		return FALSE
+
+	var/move_dir = get_dir(src, loc)
+	for(var/atom/movable/atom in get_turf(current_structure))
+		if(atom != current_structure && atom.density && atom.BlockedPassDirs(src, move_dir))
+			to_chat(src, SPAN_WARNING("[atom] prevents you from squeezing under [current_structure]!"))
+			return FALSE
+	// Is it an airlock?
+	if(istype(current_structure, /obj/structure/machinery/door/airlock))
+		var/obj/structure/machinery/door/airlock/current_airlock = current_structure
+		if(current_airlock.locked || current_airlock.welded) //Can't pass through airlocks that have been bolted down or welded
+			to_chat(src, SPAN_WARNING("[current_airlock] is locked down tight. You can't squeeze underneath!"))
+			return FALSE
+	visible_message(SPAN_WARNING("[src] scuttles underneath [current_structure]!"), \
+	SPAN_WARNING("You squeeze and scuttle underneath [current_structure]."), max_distance = 5)
+	forceMove(current_structure.loc)
+	return TRUE
+
+/mob/living/carbon/xenomorph/knocked_down_callback()
+	. = ..()
+	if(!resting) // !resting because we dont wanna prematurely update wounds if they're just trying to rest
+		update_wounds()

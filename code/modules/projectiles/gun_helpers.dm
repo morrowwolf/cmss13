@@ -109,7 +109,7 @@ DEFINES in setup.dm, referenced here.
 			//   \\
 //----------------------------------------------------------
 
-/obj/item/weapon/gun/clicked(var/mob/user, var/list/mods)
+/obj/item/weapon/gun/clicked(mob/user, list/mods)
 	if (mods["alt"])
 		if(!CAN_PICKUP(user, src))
 			return ..()
@@ -136,35 +136,9 @@ DEFINES in setup.dm, referenced here.
 	else
 		..()
 
-/*
-Note: pickup and dropped on weapons must have both the ..() to update zoom AND twohanded,
-As sniper rifles have both and weapon mods can change them as well. ..() deals with zoom only.
-*/
-/obj/item/weapon/gun/dropped(mob/user)
-	. = ..()
 
-	stop_aim()
-	if (user && user.client)
-		user.update_gun_icons()
-
-	turn_off_light(user)
-
-	var/delay_left = (last_fired + fire_delay + additional_fire_group_delay) - world.time
-	if(fire_delay_group && delay_left > 0)
-		for(var/group in fire_delay_group)
-			LAZYSET(user.fire_delay_next_fire, group, world.time + delay_left)
-
-	unwield(user)
-
-/obj/item/weapon/gun/equipped(mob/user, slot)
-	. = ..()
-
-	var/delay_left = (last_fired + fire_delay + additional_fire_group_delay) - world.time
-	if(fire_delay_group && delay_left > 0)
-		for(var/group in fire_delay_group)
-			LAZYSET(user.fire_delay_next_fire, group, world.time + delay_left)
-
-/obj/item/weapon/gun/proc/turn_off_light(mob/bearer)
+/// This function disconnects the luminosity from the mob and back to the gun
+/obj/item/weapon/gun/proc/disconnect_light_from_mob(mob/bearer)
 	if (!(flags_gun_features & GUN_FLASHLIGHT_ON))
 		return FALSE
 	for (var/slot in attachments)
@@ -173,6 +147,18 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 			continue
 		bearer.SetLuminosity(0, FALSE, src)
 		SetLuminosity(attachment.light_mod)
+		return TRUE
+	return FALSE
+
+/// This function actually turns the lights on the gun off
+/obj/item/weapon/gun/proc/turn_off_light(mob/bearer)
+	if (!(flags_gun_features & GUN_FLASHLIGHT_ON))
+		return FALSE
+	for (var/slot in attachments)
+		var/obj/item/attachable/attachment = attachments[slot]
+		if (!attachment || !attachment.light_mod)
+			continue
+		attachment.activate_attachment(src, bearer)
 		return TRUE
 	return FALSE
 
@@ -210,20 +196,25 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 				FACTION_MERCENARY,
 				FACTION_FREELANCER,
 			) return TRUE
+
+		for(var/faction in user.faction_group)
+			if(faction in FACTION_LIST_WY)
+				return TRUE
+
 		if(user.faction in FACTION_LIST_WY)
 			return TRUE
 
 	to_chat(user, SPAN_WARNING("[src] flashes a warning sign indicating unauthorized use!"))
 
 // Checks whether there is anything to put your harness
-/obj/item/weapon/gun/proc/retrieval_check(var/mob/living/carbon/human/user, var/retrieval_slot)
+/obj/item/weapon/gun/proc/retrieval_check(mob/living/carbon/human/user, retrieval_slot)
 	if(retrieval_slot == WEAR_J_STORE)
 		var/obj/item/suit = user.wear_suit
 		if(!istype(suit, /obj/item/clothing/suit/storage/marine))
 			return FALSE
 	return TRUE
 
-/obj/item/weapon/gun/proc/retrieve_to_slot(var/mob/living/carbon/human/user, var/retrieval_slot)
+/obj/item/weapon/gun/proc/retrieve_to_slot(mob/living/carbon/human/user, retrieval_slot)
 	if (!loc || !user)
 		return FALSE
 	if (!isturf(loc))
@@ -247,7 +238,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 	to_chat(user, SPAN_NOTICE(message))
 	return TRUE
 
-/obj/item/weapon/gun/proc/handle_retrieval(mob/living/carbon/human/user, var/retrieval_slot)
+/obj/item/weapon/gun/proc/handle_retrieval(mob/living/carbon/human/user, retrieval_slot)
 	if (!ishuman(user))
 		return
 	if (!retrieval_check(user, retrieval_slot))
@@ -256,9 +247,6 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 
 /obj/item/weapon/gun/attack_self(mob/user)
 	..()
-	if (target)
-		lower_aim()
-		return
 
 	//There are only two ways to interact here.
 	if(flags_item & TWOHANDED)
@@ -277,7 +265,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 
 	addtimer(CALLBACK(src, PROC_REF(sling_return), user), 3, TIMER_UNIQUE|TIMER_OVERRIDE)
 
-/obj/item/weapon/gun/proc/sling_return(var/mob/living/carbon/human/user)
+/obj/item/weapon/gun/proc/sling_return(mob/living/carbon/human/user)
 	if (!loc || !user)
 		return
 	if (!isturf(loc))
@@ -460,10 +448,10 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 		overlays += gun_image
 	else attachable_overlays[slot] = null
 
-/obj/item/weapon/gun/proc/x_offset_by_attachment_type(var/attachment_type)
+/obj/item/weapon/gun/proc/x_offset_by_attachment_type(attachment_type)
 	return 0
 
-/obj/item/weapon/gun/proc/y_offset_by_attachment_type(var/attachment_type)
+/obj/item/weapon/gun/proc/y_offset_by_attachment_type(attachment_type)
 	return 0
 
 /obj/item/weapon/gun/proc/update_mag_overlay()
@@ -527,7 +515,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 
 
 
-/mob/living/carbon/human/proc/can_unholster_from_storage_slot(var/obj/item/storage/slot)
+/mob/living/carbon/human/proc/can_unholster_from_storage_slot(obj/item/storage/slot)
 	if(isnull(slot))
 		return FALSE
 	if(slot == shoes)//Snowflakey check for shoes and uniform
@@ -543,6 +531,12 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 			var/obj/item/storage/internal/accessory/holster/holster = cycled_holster.hold
 			if(holster.current_gun)
 				return holster.current_gun
+
+		for(var/obj/item/clothing/accessory/storage/cycled_accessory in w_uniform.accessories)
+			var/obj/item/storage/internal/accessory/accessory_storage = cycled_accessory.hold
+			if(accessory_storage.storage_flags & STORAGE_ALLOW_QUICKDRAW)
+				return accessory_storage
+
 		return FALSE
 
 	if(istype(slot) && (slot.storage_flags & STORAGE_ALLOW_QUICKDRAW))
@@ -556,14 +550,14 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 	return FALSE
 
 //For the holster hotkey
-/mob/living/silicon/robot/verb/holster_verb(var/unholster_number_offset = 1 as num)
+/mob/living/silicon/robot/verb/holster_verb(unholster_number_offset = 1 as num)
 	set name = "holster"
-	set hidden = 1
+	set hidden = TRUE
 	uneq_active()
 
-/mob/living/carbon/human/verb/holster_verb(var/unholster_number_offset = 1 as num)
+/mob/living/carbon/human/verb/holster_verb(unholster_number_offset = 1 as num)
 	set name = "holster"
-	set hidden = 1
+	set hidden = TRUE
 	if(usr.is_mob_incapacitated(TRUE) || usr.is_mob_restrained())
 		to_chat(src, SPAN_WARNING("You can't draw a weapon in your current state."))
 		return
@@ -670,72 +664,71 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 	playsound(src, 'sound/handling/attachment_remove.ogg', 15, 1, 4)
 	update_icon()
 
-/obj/item/weapon/gun/proc/toggle_burst(var/mob/user)
-	//Burst of 1 doesn't mean anything. The weapon will only fire once regardless.
-	//Just a good safety to have all weapons that can equip a scope with 1 burst_amount.
-	if(burst_amount < 2 && !(flags_gun_features & GUN_HAS_FULL_AUTO))
-		to_chat(user, SPAN_WARNING("This weapon does not have a burst fire mode!"))
-		return
-
+/obj/item/weapon/gun/proc/do_toggle_firemode(datum/source, datum/keybinding, new_firemode)
+	SIGNAL_HANDLER
 	if(flags_gun_features & GUN_BURST_FIRING)//can't toggle mid burst
 		return
 
-	if(flags_gun_features & GUN_BURST_ONLY)
-		if(!(flags_gun_features & GUN_BURST_ON))
-			stack_trace("[src] has GUN_BURST_ONLY flag but not GUN_BURST_ON.")
-			flags_gun_features |= GUN_BURST_ON
-			return
+	if(!length(gun_firemode_list))
+		CRASH("[src] called do_toggle_firemode() with an empty gun_firemode_list")
 
-		to_chat(user, SPAN_NOTICE("\The [src] can only be fired in bursts!"))
+	if(length(gun_firemode_list) == 1)
+		to_chat(source, SPAN_NOTICE("[icon2html(src, source)] This gun only has one firemode."))
 		return
 
-	if(flags_gun_features & GUN_FULL_AUTO_ONLY)
-		if(!(flags_gun_features & GUN_FULL_AUTO_ON))
-			stack_trace("[src] has GUN_FULL_AUTO_ONLY flag but not GUN_FULL_AUTO_ON.")
-			flags_gun_features |= GUN_FULL_AUTO_ON
-			RegisterSignal(user.client, COMSIG_CLIENT_LMB_DOWN, PROC_REF(full_auto_start))
-			RegisterSignal(user.client, COMSIG_CLIENT_LMB_UP, PROC_REF(full_auto_stop))
-			RegisterSignal(user.client, COMSIG_CLIENT_LMB_DRAG, PROC_REF(full_auto_new_target))
-			return
+	if(new_firemode)
+		if(!(new_firemode in gun_firemode_list))
+			CRASH("[src] called do_toggle_firemode() with [new_firemode] new_firemode, not on gun_firemode_list")
+		gun_firemode = new_firemode
+	else
+		var/mode_index = gun_firemode_list.Find(gun_firemode)
+		if(++mode_index <= length(gun_firemode_list))
+			gun_firemode = gun_firemode_list[mode_index]
+		else
+			gun_firemode = gun_firemode_list[1]
 
-		to_chat(user, SPAN_NOTICE("\The [src] can only be fired in full auto mode!"))
-		return
+	playsound(source, 'sound/weapons/handling/gun_burst_toggle.ogg', 15, 1)
 
-	playsound(user, 'sound/weapons/handling/gun_burst_toggle.ogg', 15, 1)
+	if(ishuman(source))
+		to_chat(source, SPAN_NOTICE("[icon2html(src, source)] You switch to <b>[gun_firemode]</b>."))
+	SEND_SIGNAL(src, COMSIG_GUN_FIRE_MODE_TOGGLE, gun_firemode)
 
-	if(flags_gun_features & GUN_HAS_FULL_AUTO)
-		if((flags_gun_features & GUN_BURST_ON) || (burst_amount < 2 && !(flags_gun_features & GUN_FULL_AUTO_ON)))
-			flags_gun_features &= ~GUN_BURST_ON
-			flags_gun_features |= GUN_FULL_AUTO_ON
+/obj/item/weapon/gun/proc/add_firemode(added_firemode, mob/user)
+	gun_firemode_list |= added_firemode
 
-			// Register the full auto click listeners
-			RegisterSignal(user.client, COMSIG_CLIENT_LMB_DOWN, PROC_REF(full_auto_start))
-			RegisterSignal(user.client, COMSIG_CLIENT_LMB_UP, PROC_REF(full_auto_stop))
-			RegisterSignal(user.client, COMSIG_CLIENT_LMB_DRAG, PROC_REF(full_auto_new_target))
+	if(!length(gun_firemode_list))
+		CRASH("add_firemode called with a resulting gun_firemode_list length of [length(gun_firemode_list)].")
 
-			to_chat(user, SPAN_NOTICE("[icon2html(src, user)] You set [src] to full auto mode."))
-			return
-		else if(flags_gun_features & GUN_FULL_AUTO_ON)
-			flags_gun_features &= ~GUN_FULL_AUTO_ON
-			REMOVE_TRAIT(user, TRAIT_OVERRIDE_CLICKDRAG, TRAIT_SOURCE_WEAPON)
-			full_auto_stop() // If the LMBUP hasn't been called for any reason.
-			UnregisterSignal(user.client, list(
-				COMSIG_CLIENT_LMB_DOWN,
-				COMSIG_CLIENT_LMB_UP,
-				COMSIG_CLIENT_LMB_DRAG,
-			))
+/obj/item/weapon/gun/proc/remove_firemode(removed_firemode, mob/user)
+	if(!length(gun_firemode_list) || (length(gun_firemode_list) == 1))
+		CRASH("remove_firemode called with gun_firemode_list length [length(gun_firemode_list)].")
 
-			to_chat(user, SPAN_NOTICE("[icon2html(src, user)] You set [src] to single fire mode."))
-			return
+	gun_firemode_list -= removed_firemode
 
+	if(gun_firemode == removed_firemode)
+		gun_firemode = gun_firemode_list[1]
+		do_toggle_firemode(user, gun_firemode)
 
-	flags_gun_features ^= GUN_BURST_ON
-	to_chat(user, SPAN_NOTICE("[icon2html(src, user)] You [flags_gun_features & GUN_BURST_ON ? "<B>enable</b>" : "<B>disable</b>"] [src]'s burst fire mode."))
+/obj/item/weapon/gun/proc/setup_firemodes()
+	gun_firemode_list.len = 0
+	if(start_semiauto)
+		gun_firemode_list |= GUN_FIREMODE_SEMIAUTO
+
+	if(burst_amount > BURST_AMOUNT_TIER_1)
+		gun_firemode_list |= GUN_FIREMODE_BURSTFIRE
+
+	if(start_automatic)
+		gun_firemode_list |= GUN_FIREMODE_AUTOMATIC
+
+	if(!length(gun_firemode_list))
+		CRASH("[src] called setup_firemodes() with an empty gun_firemode_list")
+	else
+		gun_firemode = gun_firemode_list[1]
 
 /obj/item/weapon/gun/verb/use_toggle_burst()
 	set category = "Weapons"
-	set name = "Toggle Burst Fire Mode"
-	set desc = "Toggle on or off your weapon burst mode, if it has one. Greatly reduces accuracy."
+	set name = "Toggle Firemode"
+	set desc = "Cycles through your gun's firemodes. Automatic modes greatly reduce accuracy."
 	set src = usr.contents
 
 	var/obj/item/weapon/gun/active_firearm = get_active_firearm(usr)
@@ -743,7 +736,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 		return
 	src = active_firearm
 
-	toggle_burst(usr)
+	do_toggle_firemode(usr)
 
 /obj/item/weapon/gun/verb/empty_mag()
 	set category = "Weapons"
@@ -816,10 +809,10 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 		return
 
 	flags_gun_features ^= GUN_TRIGGER_SAFETY
-	gun_safety_message(usr)
+	gun_safety_handle(usr)
 
 
-/obj/item/weapon/gun/proc/gun_safety_message(var/mob/user)
+/obj/item/weapon/gun/proc/gun_safety_handle(mob/user)
 	to_chat(user, SPAN_NOTICE("You toggle the safety [SPAN_BOLD(flags_gun_features & GUN_TRIGGER_SAFETY ? "on" : "off")]."))
 	playsound(user, 'sound/weapons/handling/safety_toggle.ogg', 25, 1)
 
@@ -933,3 +926,28 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 	if(slot != WEAR_L_HAND && slot != WEAR_R_HAND)
 		return FALSE
 	return TRUE
+
+/**
+ * Returns one of the two override values if either are null, preferring the argument value.
+ * Otherwise, returns TRUE if it is in a civilian usable category (Handguns or SMGs), FALSE if it is not.
+ */
+/obj/item/weapon/gun/proc/is_civilian_usable(mob/user, arg_override)
+	if(!isnull(arg_override))
+		return arg_override
+
+	if(!isnull(civilian_usable_override))
+		return civilian_usable_override
+
+	if(gun_category in UNTRAINED_USABLE_CATEGORIES)
+		return TRUE
+
+	return FALSE
+
+///Helper proc that processes a clicked target, if the target is not black tiles, it will not change it. If they are it will return the turf of the black tiles. It will return null if the object is a screen object other than black tiles.
+/proc/get_turf_on_clickcatcher(atom/target, mob/user, params)
+	var/list/modifiers = params2list(params)
+	if(!istype(target, /atom/movable/screen))
+		return target
+	if(!istype(target, /atom/movable/screen/click_catcher))
+		return null
+	return params2turf(modifiers["screen-loc"], get_turf(user), user.client)

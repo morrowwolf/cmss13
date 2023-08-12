@@ -33,7 +33,7 @@
 /mob/living/silicon/robot/drone/Initialize()
 	nicknumber = rand(100,999)
 
-	..()
+	. = ..()
 
 
 	add_verb(src, /mob/living/proc/hide)
@@ -77,7 +77,7 @@
 	flavor_text = "This is an XP-45 Engineering Drone, one of the many fancy things that come out of the Weyland-Yutani Research Department. It's designed to assist both ship repairs as well as ground missions. Shiny!"
 	update_icons()
 
-/mob/living/silicon/robot/drone/initialize_pass_flags(var/datum/pass_flags_container/PF)
+/mob/living/silicon/robot/drone/initialize_pass_flags(datum/pass_flags_container/PF)
 	..()
 	if (PF)
 		PF.flags_pass = PASS_MOB_THRU|PASS_FLAGS_CRAWLER
@@ -87,6 +87,15 @@
 
 	aiCamera = new/obj/item/device/camera/siliconcam/drone_camera(src)
 	playsound(src.loc, 'sound/machines/twobeep.ogg', 25, 0)
+
+/mob/living/silicon/robot/drone/Destroy()
+	QDEL_NULL(aiCamera)
+	stack_metal = null
+	stack_wood = null
+	stack_glass = null
+	stack_plastic = null
+	decompiler = null
+	return ..()
 
 //Redefining some robot procs...
 /mob/living/silicon/robot/drone/updatename()
@@ -126,7 +135,7 @@
 /mob/living/silicon/robot/drone/updatehealth()
 	if(status_flags & GODMODE)
 		health = health
-		stat = CONSCIOUS
+		set_stat(CONSCIOUS)
 		return
 	health = health - (getBruteLoss() + getFireLoss())
 	return
@@ -144,7 +153,7 @@
 	..()
 
 //DRONE MOVEMENT.
-/mob/living/silicon/robot/drone/Process_Spaceslipping(var/prob_slip)
+/mob/living/silicon/robot/drone/Process_Spaceslipping(prob_slip)
 	//TODO: Consider making a magboot item for drones to equip. ~Z
 	return 0
 
@@ -161,7 +170,7 @@
 		if(jobban_isbanned(O, "Cyborg"))
 			continue
 
-/mob/living/silicon/robot/drone/proc/question(var/client/C)
+/mob/living/silicon/robot/drone/proc/question(client/C)
 	spawn(0)
 		if(!C || jobban_isbanned(C,"Cyborg")) return
 		var/response = alert(C, "Someone is attempting to reboot a maintenance drone. Would you like to play as one?", "Maintenance drone reboot", "Yes", "No", "Never for this round.")
@@ -170,7 +179,7 @@
 		else if(response == "Yes")
 			transfer_personality(C)
 
-/mob/living/silicon/robot/drone/proc/transfer_personality(var/client/player)
+/mob/living/silicon/robot/drone/proc/transfer_personality(client/player)
 
 	if(!player) return
 	player.change_view(world_view_size)

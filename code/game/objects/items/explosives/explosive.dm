@@ -175,7 +175,7 @@
 			detonator.a_left.activate()
 		active = TRUE
 
-/obj/item/explosive/proc/prime(var/force = FALSE)
+/obj/item/explosive/proc/prime(force = FALSE)
 	if(!force && (!customizable || !assembly_stage || assembly_stage < ASSEMBLY_LOCKED))
 		return
 
@@ -205,7 +205,7 @@
 	var/mob/cause_mob = cause_data?.resolve_mob()
 	if(cause_mob) //so we don't message for simulations
 		reagents.source_mob = WEAKREF(cause_mob)
-		msg_admin_niche("[key_name(cause_mob)] detonated custom explosive by [key_name(creator)]: [name] (REAGENTS: [reagent_list_text]) in [get_area(src)] (<A HREF='?_src_=admin_holder;[HrefToken(forceGlobal = TRUE)];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)", loc.x, loc.y, loc.z)
+		msg_admin_niche("[key_name(cause_mob)] detonated custom explosive by [key_name(creator)]: [name] (REAGENTS: [reagent_list_text]) in [get_area(src)] [ADMIN_JMP(loc)]", loc.x, loc.y, loc.z)
 
 	if(containers.len < 2)
 		reagents.trigger_volatiles = TRUE //Explode on the first transfer
@@ -234,7 +234,7 @@
 		invisibility = INVISIBILITY_MAXIMUM //Why am i doing this?
 		QDEL_IN(src, 50) //To make sure all reagents can work correctly before deleting the grenade.
 
-/obj/item/explosive/proc/make_copy_of(var/obj/item/explosive/other)
+/obj/item/explosive/proc/make_copy_of(obj/item/explosive/other)
 	cause_data = other.cause_data
 	assembly_stage = other.assembly_stage
 	falloff_mode = other.falloff_mode
@@ -251,7 +251,7 @@
 
 	toggle_blast_dampener(usr)
 
-/obj/item/explosive/proc/toggle_blast_dampener(var/mob/living/carbon/human/H)
+/obj/item/explosive/proc/toggle_blast_dampener(mob/living/carbon/human/H)
 	if(!istype(H))
 		to_chat(usr, SPAN_DANGER("This is beyond your understanding..."))
 		return

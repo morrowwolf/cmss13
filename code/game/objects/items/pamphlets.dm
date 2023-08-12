@@ -96,8 +96,8 @@
 	user.hud_set_squad()
 
 	var/obj/item/card/id/ID = user.wear_id
-	ID.set_assignment((user.assigned_squad ? (user.assigned_squad.name + " ") : "") + "Squad Spotter")
-	GLOB.data_core.manifest_modify(user.real_name, WEAKREF(user), "Squad Spotter")
+	ID.set_assignment((user.assigned_squad ? (user.assigned_squad.name + " ") : "") + "Spotter")
+	GLOB.data_core.manifest_modify(user.real_name, WEAKREF(user), "Spotter")
 
 /obj/item/pamphlet/skill/machinegunner
 	name = "heavy machinegunner instructional pamphlet"
@@ -111,7 +111,8 @@
 	desc = "A pamphlet used to quickly impart vital knowledge. This one has a powerloader insignia. The title reads 'Moving freight and squishing heads - a practical guide to Caterpillar P-5000 Work Loader'."
 	icon_state = "pamphlet_powerloader"
 	trait = /datum/character_trait/skills/powerloader
-	bypass_pamphlet_limit = TRUE //it's really not necessary to stop people from learning powerloader skill
+	/// it's really not necessary to stop people from learning powerloader skill
+	bypass_pamphlet_limit = TRUE
 
 /obj/item/pamphlet/skill/police
 	name = "Policing instructional pamphlet"

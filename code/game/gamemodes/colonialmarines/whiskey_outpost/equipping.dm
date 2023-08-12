@@ -152,6 +152,10 @@ Treat the wounded, guide triage, and survive for as long as possible."}
 /datum/job/civilian/doctor/whiskey
 	title = JOB_WO_DOCTOR
 	gear_preset = /datum/equipment_preset/wo/doctor
+	job_options = null //Does not inherit regular doctor's variants, uses unique preset instead.
+
+/datum/job/civilian/doctor/whiskey/handle_job_options()
+	return
 
 /datum/job/civilian/doctor/whiskey/generate_entry_message(mob/living/carbon/human/H)
 	. = {"You volunteered to assist ground-side with medical duties. That may have been a mistake.
@@ -225,7 +229,7 @@ This could be the story of the world! 'Brave Marines in brutal combat with unkno
 You just gotta get out of this jungle to tell the tale!"}
 
 //this calls  self-setting headsets for marines AFTER they are assigned squads
-/datum/game_mode/whiskey_outpost/proc/self_set_headset(var/mob/living/carbon/human/H)
+/datum/game_mode/whiskey_outpost/proc/self_set_headset(mob/living/carbon/human/H)
 	if(!istype(H))
 		return
 	var/obj/item/device/radio/headset/almayer/marine/self_setting/headset = H.get_type_in_ears(/obj/item/device/radio/headset/almayer/marine/self_setting)

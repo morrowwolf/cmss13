@@ -169,7 +169,7 @@
 	return
 
 //Converts an angle (degrees) into an ss13 direction
-/proc/angle2dir(var/degree)
+/proc/angle2dir(degree)
 	degree = ((degree+22.5)%365)
 	if(degree < 45) return NORTH
 	if(degree < 90) return NORTHEAST
@@ -182,7 +182,7 @@
 
 //returns the north-zero clockwise angle in degrees, given a direction
 
-/proc/dir2angle(var/D)
+/proc/dir2angle(D)
 	switch(D)
 		if(NORTH) return 0
 		if(SOUTH) return 180
@@ -196,7 +196,7 @@
 
 //returns a number to be used to index lists; based off dmi direction ordering: 1:SOUTH(2) 2:NORTH(1) 3:EAST(4) 4:WEST(8) etc...
 
-/proc/dir2indexnum(var/D)
+/proc/dir2indexnum(D)
 	switch(D)
 		if(NORTH) return 2
 		if(SOUTH) return 1
@@ -226,7 +226,6 @@
 	if(rights & R_POSSESS) . += "[seperator]+POSSESS"
 	if(rights & R_PERMISSIONS) . += "[seperator]+PERMISSIONS"
 	if(rights & R_STEALTH) . += "[seperator]+STEALTH"
-	if(rights & R_REJUVINATE) . += "[seperator]+REJUVINATE"
 	if(rights & R_COLOR) . += "[seperator]+COLOR"
 	if(rights & R_VAREDIT) . += "[seperator]+VAREDIT"
 	if(rights & R_SOUNDS) . += "[seperator]+SOUND"
@@ -313,3 +312,22 @@
 				for(var/A in value)
 					if(var_source.vars.Find(A))
 						. += A
+
+/// Formats a larger number to correct textual representation without losing data
+/proc/big_number_to_text(number)
+	return num2text(number, INFINITY)
+
+/proc/text2list(text, delimiter="\n")
+	var/delim_len = length(delimiter)
+	if (delim_len < 1)
+		return list(text)
+
+	. = list()
+	var/last_found = 1
+	var/found
+
+	do
+		found       = findtext(text, delimiter, last_found, 0)
+		.          += copytext(text, last_found, found)
+		last_found  = found + delim_len
+	while (found)

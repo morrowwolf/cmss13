@@ -16,7 +16,7 @@
 	QDEL_NULL(radar)
 	. = ..()
 
-/obj/item/tool/crew_monitor/attack_self(var/mob/user)
+/obj/item/tool/crew_monitor/attack_self(mob/user)
 	. = ..()
 	radar.tgui_interact(user)
 
@@ -50,7 +50,7 @@
 
 /obj/item/clothing/suit/auto_cpr/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = 0, force = 0)
 	. = ..()
-	if(!isHumanStrict(H))
+	if(!ishuman_strict(H))
 		return FALSE
 
 /obj/item/clothing/suit/auto_cpr/attack(mob/living/carbon/human/M, mob/living/user)
@@ -76,7 +76,7 @@
 							SPAN_NOTICE("You start fitting \the [src] onto [M]'s chest."),
 							SPAN_WARNING("[user] starts fitting \the [src] onto your chest!"),
 							SPAN_NOTICE("[user] starts fitting \the [src] onto [M]'s chest."))
-		if(!(do_after(user, HUMAN_STRIP_DELAY * user.get_skill_duration_multiplier(), INTERRUPT_ALL, BUSY_ICON_GENERIC, M, INTERRUPT_MOVED, BUSY_ICON_MEDICAL)))
+		if(!(do_after(user, HUMAN_STRIP_DELAY * user.get_skill_duration_multiplier(SKILL_MEDICAL), INTERRUPT_ALL, BUSY_ICON_GENERIC, M, INTERRUPT_MOVED, BUSY_ICON_MEDICAL)))
 			return
 		if(!mob_can_equip(M, WEAR_JACKET))
 			return
@@ -108,12 +108,13 @@
 	if(pdcell && pdcell.charge)
 		overlays.Cut()
 	switch(round(pdcell.charge * 100 / pdcell.maxcharge))
+		if(1 to 32)
+			overlays += "cpr_batt_lo"
+		if(33 to 65)
+			overlays += "cpr_batt_mid"
 		if(66 to INFINITY)
 			overlays += "cpr_batt_hi"
-		if(65 to 33)
-			overlays += "cpr_batt_mid"
-		if(32 to 1)
-			overlays += "cpr_batt_lo"
+
 
 /obj/item/clothing/suit/auto_cpr/get_examine_text(mob/user)
 	. = ..()
@@ -209,7 +210,7 @@
 	pdcell = new/obj/item/cell(src) //has 1000 charge
 	update_icon()
 
-/obj/item/tool/portadialysis/update_icon(var/detaching = FALSE)
+/obj/item/tool/portadialysis/update_icon(detaching = FALSE)
 	overlays.Cut()
 	if(attached)
 		overlays += "+hooked"
@@ -266,7 +267,7 @@
 	STOP_PROCESSING(SSobj, src)
 
 /obj/item/tool/portadialysis/attack(mob/living/carbon/human/target, mob/living/carbon/human/user)
-	if(!isHumanStrict(target))
+	if(!ishuman_strict(target))
 		return ..()
 
 	if(!skillcheck(user, SKILL_MEDICAL, SKILL_MEDICAL_MEDIC))
@@ -370,7 +371,7 @@
 	updateUsrDialog()
 	update_icon()
 
-/obj/item/tool/portadialysis/proc/damage_arms(var/mob/living/carbon/human/human_to_damage)
+/obj/item/tool/portadialysis/proc/damage_arms(mob/living/carbon/human/human_to_damage)
 	var/obj/limb/l_arm = human_to_damage.get_limb("l_arm")
 	var/obj/limb/r_arm = human_to_damage.get_limb("r_arm")
 	var/list/arms_to_damage = list(l_arm, r_arm)

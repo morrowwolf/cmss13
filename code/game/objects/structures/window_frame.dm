@@ -25,7 +25,7 @@
 		/obj/structure/girder,
 		/obj/structure/window_frame)
 
-/obj/structure/window_frame/initialize_pass_flags(var/datum/pass_flags_container/PF)
+/obj/structure/window_frame/initialize_pass_flags(datum/pass_flags_container/PF)
 	..()
 	if (PF)
 		PF.flags_can_pass_all = PASS_OVER|PASS_TYPE_CRAWLER
@@ -68,7 +68,7 @@
 		qdel(WF)
 	. = ..()
 
-/obj/structure/window_frame/ex_act(var/power)
+/obj/structure/window_frame/ex_act(power)
 	switch(power)
 		if(0 to EXPLOSION_THRESHOLD_LOW)
 			if (prob(25))
@@ -111,7 +111,7 @@
 
 	else if(istype(W, /obj/item/grab))
 		var/obj/item/grab/G = W
-		if(isXeno(user)) return
+		if(isxeno(user)) return
 		if(isliving(G.grabbed_thing))
 			var/mob/living/M = G.grabbed_thing
 			if(user.grab_level >= GRAB_AGGRESSIVE)
@@ -134,7 +134,7 @@
 	else
 		. = ..()
 
-/obj/structure/window_frame/attack_alien(mob/living/carbon/Xenomorph/user)
+/obj/structure/window_frame/attack_alien(mob/living/carbon/xenomorph/user)
 	if(!reinforced && user.claw_type >= CLAW_TYPE_SHARP)
 		user.animation_attack_on(src)
 		playsound(src, 'sound/effects/metalhit.ogg', 25, 1)
@@ -153,7 +153,7 @@
 	take_damage(P.damage)
 	return TRUE
 
-/obj/structure/window_frame/proc/take_damage(var/damage)
+/obj/structure/window_frame/proc/take_damage(damage)
 	health = max(0, (health - damage))
 	health = min(health, max_health)
 
@@ -207,20 +207,20 @@
 	reinforced = TRUE
 
 /obj/structure/window_frame/hangar
-	icon_state = "hngr_window0"
+	icon_state = "hngr_window0_frame"
 	basestate = "hngr_window"
 
 /obj/structure/window_frame/hangar/reinforced
-	icon_state = "hngr_rwindow0"
+	icon_state = "hngr_rwindow0_frame"
 	basestate = "hngr_rwindow"
 	reinforced = TRUE
 
 /obj/structure/window_frame/bunker
-	icon_state = "bnkr_window0"
+	icon_state = "bnkr_window0_frame"
 	basestate = "bnkr_window"
 
 /obj/structure/window_frame/bunker/reinforced
-	icon_state = "bnkr_rwindow0"
+	icon_state = "bnkr_rwindow0_frame"
 	basestate = "bnkr_rwindow"
 	reinforced = TRUE
 
@@ -235,6 +235,12 @@
 	icon_state = "strata_window0_frame"
 	basestate = "strata_window"
 	reinforced = TRUE
+
+/obj/structure/window_frame/strata/hull
+	icon_state = "strata_window0_frame"
+	basestate = "strata_window"
+	unslashable = TRUE
+	unacidable = TRUE
 
 //Kutjevo frames
 

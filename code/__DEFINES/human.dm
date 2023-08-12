@@ -212,6 +212,4 @@
 #define RELIGION_ATHEISM "Atheism"
 #define RELIGION_AGNOSTICISM "Agnostic"
 
-///////////////////MISC HUMAN FLAGS (LINKED TO VAR: FLAGS_HUMAN_MISC)///////////////////
-
-#define HUMAN_FLAG_CHANGED (1<<0)
+#define MAXIMUM_DROPPED_OBJECTS_REMEMBERED 2

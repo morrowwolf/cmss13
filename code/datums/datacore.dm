@@ -197,7 +197,7 @@ GLOBAL_DATUM_INIT(data_core, /datum/datacore, new)
 	dat = replacetext(dat, "\t", "")
 	return dat
 
-/datum/datacore/proc/manifest(var/nosleep = 0)
+/datum/datacore/proc/manifest(nosleep = 0)
 	spawn()
 		if(!nosleep)
 			sleep(40)
@@ -226,14 +226,17 @@ GLOBAL_DATUM_INIT(data_core, /datum/datacore, new)
 	if(foundrecord)
 		if(assignment)
 			foundrecord.fields["rank"] = assignment
-		if (rank)
+		if(rank)
 			foundrecord.fields["real_rank"] = rank
-		if (p_stat)
+		if(p_stat)
 			foundrecord.fields["p_stat"] = p_stat
+		if(!use_name)
+			if(name)
+				foundrecord.fields["name"] = name
 		return TRUE
 	return FALSE
 
-/datum/datacore/proc/manifest_inject(var/mob/living/carbon/human/H)
+/datum/datacore/proc/manifest_inject(mob/living/carbon/human/H)
 	var/assignment
 	if(H.job)
 		assignment = H.job
@@ -302,7 +305,13 @@ GLOBAL_DATUM_INIT(data_core, /datum/datacore, new)
 	S.fields["criminal"] = "None"
 	S.fields["incident"] = ""
 	S.fields["ref"] = WEAKREF(H)
+
+	if(H.sec_record && !jobban_isbanned(H, "Records"))
+		var/new_comment = list("entry" = H.sec_record, "created_by" = list("name" = "\[REDACTED\]", "rank" = "Military Police"), "deleted_by" = null, "deleted_at" = null, "created_at" = "Pre-Deployment")
+		S.fields["comments"] = list("1" = new_comment)
+		S.fields["notes"] = H.sec_record
 	security += S
+
 
 	//Locked Record
 	var/datum/data/record/L = new()
@@ -325,7 +334,7 @@ GLOBAL_DATUM_INIT(data_core, /datum/datacore, new)
 	locked += L
 
 
-/proc/get_id_photo(var/mob/living/carbon/human/H)
+/proc/get_id_photo(mob/living/carbon/human/H)
 	var/icon/preview_icon = null
 
 	//var/g = "m"
